@@ -3,8 +3,6 @@ Collapse Multilevel Network
 JC
 20/02/2021
 
-\[\\[1cm]\]
-
 # Globals
 
 ``` r
