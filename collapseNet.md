@@ -70,7 +70,7 @@ plotNet(g, mycoords = coords.r, title = "raw net")
 
 ![](collapseNet_files/figure-gfm/raw%20net-1.png)<!-- -->
 
-## Collapse at facility-level using minimum path-lenth 2
+## Collapse at facility-level using minimum path-length 2
 
 ``` r
 # calculate the shortest distance between all aged cre nodes:
@@ -93,7 +93,7 @@ plotNet(g.mpl2, mycoords = coords.r, title = "MPL2")
 
 ![](collapseNet_files/figure-gfm/MPL2-1.png)<!-- -->
 
-## Collapse at facility-level using minimum path-lenth 3
+## Collapse at facility-level using minimum path-length 3
 
 ``` r
 # subset mpl3
@@ -108,4 +108,4 @@ plotNet(g.mpl3, mycoords = coords.r, title = "MPL3")
 
 ![](collapseNet_files/figure-gfm/MPL3-1.png)<!-- -->
 
-## Collapse at facility-level using path-lenth 3
+## Collapse at facility-level using path-length 3
