@@ -11,6 +11,8 @@ JC
 library(igraph)
 library(scales)
 library(reshape2)
+library(data.table)
+library(dplyr)
 #-----------------------------------
 # globals
 # function to plot
@@ -120,36 +122,31 @@ vids <- neighborhood(graph = g, order = 3,
 
 myvec <- 1:length(vids)
 
-rval <- list()
+rval <- lapply(1:length(vids), function(j) {
 
-for(j in 1: length(vids)){
-
-# create subgraph with nodes from previous step
-ret.g <- induced.subgraph(graph = g, vids = unlist(vids[[j]]),
+  # create subgraph with nodes from previous step
+  ret.g <- induced.subgraph(graph = g, vids = unlist(vids[[j]]),
                              impl = "create_from_scratch")
 
-# return all simple paths for the subgraph
-ret.p <- all_simple_paths(graph = ret.g, from = all.facilities[j] , 
+  # return all simple paths for the subgraph
+  ret.p <- all_simple_paths(graph = ret.g, from = all.facilities[j] , 
                  to = V(ret.g), mode = c("all"))
 
-# subset simple paths of length 3
-ret.p <- ret.p[sapply(ret.p, length) == 4] 
+  # subset simple paths of length 3
+  ret.p <- ret.p[sapply(ret.p, length) == 4] 
 
-# create a function for checking ends
-check.ends <- function(x){all(c(as_ids(x[1]), as_ids(x[4])) %in% all.facilities)}
+  # create a function for checking ends
+  check.ends <- function(x){all(c(as_ids(x[1]), as_ids(x[4])) %in% all.facilities)}
 
-# subset paths with start and end in facility
-ret.p <- ret.p[sapply(ret.p, check.ends)]
+  # subset paths with start and end in facility
+  ret.p <- ret.p[sapply(ret.p, check.ends)]
 
-# keep only first and last node in path (RACFS) to make edge list 
-r.edf <- t(sapply(ret.p, function(x){as_ids(x[c(1,4)])}))
+  # keep only first and last node in path (RACFS) to make edge list 
+  r.edf <- t(sapply(ret.p, function(x){as_ids(x[c(1,4)])}))
 
-# add to return value (list)
-rval[[j]] <- r.edf
-}
-
-# turn into df
-rval <- do.call(rbind, rval)
+  # add to return value (list)
+  rval[[j]] <- r.edf
+}) %>% do.call(rbind, .)
 
 # keep only unique edges
 pl3.edf <- unique(t(apply(rval, 1,sort)))
