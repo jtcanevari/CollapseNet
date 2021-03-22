@@ -8,11 +8,15 @@ JC
 ``` r
 #-----------------------------------
 # load libraries
+library(tidyverse)
 library(igraph)
 library(scales)
 library(reshape2)
-library(data.table)
-library(dplyr)
+```
+
+    ## Warning: package 'reshape2' was built under R version 4.0.4
+
+``` r
 #-----------------------------------
 # globals
 # function to plot
@@ -112,6 +116,31 @@ plotNet(g.mpl3, mycoords = coords.r, title = "MPL3")
 
 ## Collapse at facility-level using path-length 3
 
+### Logan’s version
+
+Begin with the central staff-staff edges and table join staff-facility
+edges onto either side.
+
+``` r
+staff.edges = e.df %>%
+  filter(!str_detect(source, "F"))
+employment.edges = e.df %>%
+  filter(str_detect(source, "F")) %>%
+  rename(facility = source,
+         staff = target)
+collapsed.edges = staff.edges %>%
+  inner_join(employment.edges, by=c("source"="staff")) %>%
+  inner_join(employment.edges, by=c("target"="staff"), suffix=c(".source", ".target")) %>%
+  filter(facility.source != facility.target) %>%
+  select(facility.source, facility.target)
+g3 = graph.data.frame(collapsed.edges, directed = F)
+plot(g3, main="Facilities linked via two staff in series")
+```
+
+![](collapseNet_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
+### Jose’s version
+
 ``` r
 # vector of facility id
 all.facilities <- v.df$id[which(v.df$type == 'facility')] 
@@ -120,42 +149,40 @@ all.facilities <- v.df$id[which(v.df$type == 'facility')]
 vids <- neighborhood(graph = g, order = 3,
                      nodes = all.facilities, mode = "all")
 
-myvec <- 1:length(vids)
+vapply(vids, FUN = function(vx){}  )
 
-rval <- lapply(1:length(vids), function(j) {
-
-  # create subgraph with nodes from previous step
-  ret.g <- induced.subgraph(graph = g, vids = unlist(vids[[j]]),
+# create subgraph with nodes from previous step
+ret.g <- induced.subgraph(graph = g, vids = unlist(vids[[1]]),
                              impl = "create_from_scratch")
 
-  # return all simple paths for the subgraph
-  ret.p <- all_simple_paths(graph = ret.g, from = all.facilities[j] , 
+# return all simple paths for the subgraph
+ret.p <- all_simple_paths(graph = ret.g, from = all.facilities[1] , 
                  to = V(ret.g), mode = c("all"))
 
-  # subset simple paths of length 3
-  ret.p <- ret.p[sapply(ret.p, length) == 4] 
+# subset simple paths of length 3
+ret.p <- ret.p[sapply(ret.p, length) == 4] 
 
-  # create a function for checking ends
-  check.ends <- function(x){all(c(as_ids(x[1]), as_ids(x[4])) %in% all.facilities)}
+# create a function for checking ends
+check.ends <- function(x){all(c(as_ids(x[1]), as_ids(x[4])) %in% all.facilities)}
 
-  # subset paths with start and end in facility
-  ret.p <- ret.p[sapply(ret.p, check.ends)]
+# subset paths with start and end in facility
+ret.p <- ret.p[sapply(ret.p, check.ends)]
 
-  # keep only first and last node in path (RACFS) to make edge list 
-  r.edf <- t(sapply(ret.p, function(x){as_ids(x[c(1,4)])}))
+# keep only first and last node in path (RACFS) to make edge list 
+r.edf <- t(sapply(ret.p, function(x){as_ids(x[c(1,4)])}))
 
-  # add to return value (list)
-  rval[[j]] <- r.edf
-}) %>% do.call(rbind, .)
 
-# keep only unique edges
-pl3.edf <- unique(t(apply(rval, 1,sort)))
+# if ret.p > 1 add to edge list
 
-# create graph
-g.pl3 <- graph.data.frame(d = pl3.edf,
-                           directed = FALSE,
-                           v = v.df)
-plotNet(g.pl3, mycoords = coords.r, title = "PL3")
+
+# selegoV <- ego(g, order=1, nodes = selnodes, mode = "all", mindist = 0)
+#     
+#     extend arm to nodes that are at 3 PL distance from RACFi
+#     subset nodes from step 2 to retain RACF nodes only
+#     list simple paths between RACFi and nodes from step 3
+#     keep paths from step 4 that don’t go through RACFs
+#     collapse simple paths to 1st and last node of the path (i.e. RACF-RACF edge)
+
+# }
+# https://gist.github.com/JoshuaTPierce/b919168421b40e06481080eb53c3fb2f
 ```
-
-![](collapseNet_files/figure-gfm/PL3-1.png)<!-- -->

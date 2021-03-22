@@ -11,6 +11,7 @@ output: github_document
 
 #-----------------------------------
 # load libraries
+library(tidyverse)
 library(igraph)
 library(scales)
 library(reshape2)
@@ -110,9 +111,31 @@ plotNet(g.mpl3, mycoords = coords.r, title = "MPL3")
 
 ```
 
-## Collapse at facility-level using path-length 3
+## Collapse at facility-level using path-length 3 {.tabset .tabset-pills}
 
-```{r PL3, echo=FALSE}
+### Logan's version
+
+Begin with the central staff-staff edges and table join staff-facility edges onto either side.
+
+```{r}
+staff.edges = e.df %>%
+  filter(!str_detect(source, "F"))
+employment.edges = e.df %>%
+  filter(str_detect(source, "F")) %>%
+  rename(facility = source,
+         staff = target)
+collapsed.edges = staff.edges %>%
+  inner_join(employment.edges, by=c("source"="staff")) %>%
+  inner_join(employment.edges, by=c("target"="staff"), suffix=c(".source", ".target")) %>%
+  filter(facility.source != facility.target) %>%
+  select(facility.source, facility.target)
+g3 = graph.data.frame(collapsed.edges, directed = F)
+plot(g3, main="Facilities linked via two staff in series")
+```
+
+### Jose's version
+
+```{r PL3, eval=F}
 
 # vector of facility id
 all.facilities <- v.df$id[which(v.df$type == 'facility')] 
